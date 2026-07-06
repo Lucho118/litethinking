@@ -39,9 +39,19 @@ def test_listar_empresas_es_publico(api_client):
 
 
 @pytest.mark.django_db
-def test_crear_empresa_sin_autenticacion_retorna_403(api_client):
-    response = api_client.post("/api/empresas/", EMPRESA_PAYLOAD, format="json")
-    assert response.status_code == status.HTTP_403_FORBIDDEN
+def test_crear_empresa_sin_autenticacion_retorna_401_o_403(api_client):
+    """Con JWT activo, unauthenticated = 401; authenticated sin permiso = 403."""
+    payload = {
+        "nit": "830514226-6",
+        "nombre": "Acme S.A.S.",
+        "direccion": "Calle 1 #2-3",
+        "telefono": "3001234567",
+    }
+    response = api_client.post("/api/empresas/", payload, format="json")
+    assert response.status_code in (
+        status.HTTP_401_UNAUTHORIZED,
+        status.HTTP_403_FORBIDDEN,
+    )
 
 
 # ── Tests: CRUD completo como Administrador ───────────────────────────────────

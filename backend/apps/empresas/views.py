@@ -1,10 +1,9 @@
 from rest_framework import status
-from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.permissions import EsAdministrador
+from apps.authentication.permissions import EsAdministradorOSoloLectura
 
 from .repositories import EmpresaRepository
 from .serializers import EmpresaSerializer
@@ -21,14 +20,11 @@ from .use_cases import (
 
 class EmpresaListCreateView(APIView):
     """
-    GET  /api/empresas/  → público (AllowAny)
-    POST /api/empresas/  → solo grupo Administrador
+    GET  /api/empresas/  → público
+    POST /api/empresas/  → solo Administrador
     """
 
-    def get_permissions(self):
-        if self.request.method == "GET":
-            return [AllowAny()]
-        return [EsAdministrador()]
+    permission_classes = [EsAdministradorOSoloLectura]
 
     def get(self, request: Request) -> Response:
         use_case = ListarEmpresasUseCase(EmpresaRepository())
@@ -56,10 +52,7 @@ class EmpresaDetailView(APIView):
     DELETE /api/empresas/<nit>/  → solo grupo Administrador
     """
 
-    def get_permissions(self):
-        if self.request.method == "GET":
-            return [AllowAny()]
-        return [EsAdministrador()]
+    permission_classes = [EsAdministradorOSoloLectura]
 
     def get(self, request: Request, nit: str) -> Response:
         empresa = ObtenerEmpresaUseCase(EmpresaRepository()).ejecutar(nit)

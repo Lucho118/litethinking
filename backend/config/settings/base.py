@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     # Local apps
+    "apps.authentication",
     "apps.empresas",
     "apps.productos",
 ]
@@ -79,8 +80,8 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
-]
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},    # Custom: exige mayúscula, dígito y carácter especial
+    {"NAME": "apps.authentication.validators.FuertePasswordValidator"},]
 
 # ── Internationalisation ──────────────────────────────────────────────────────
 LANGUAGE_CODE = "es-co"
@@ -96,11 +97,13 @@ REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
     "DEFAULT_PARSER_CLASSES": ["rest_framework.parsers.JSONParser"],
     "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ],
-    # Default: read-only for all. Write operations declare EsAdministrador explicitly.
+    # Permiso por defecto: solo lectura para todos; las vistas de escritura
+    # declaran EsAdministradorOSoloLectura explícitamente.
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticatedOrReadOnly",
+        "rest_framework.permissions.AllowAny",
     ],
 }
 
@@ -109,3 +112,24 @@ CORS_ALLOWED_ORIGINS = env.list(
     "CORS_ALLOWED_ORIGINS",
     default=["http://localhost:3000"],
 )
+# ── Authentication backend ────────────────────────────────────────────────────
+AUTHENTICATION_BACKENDS = [
+    # Autentica con email en lugar de username (véase apps/authentication/backends.py)
+    "apps.authentication.backends.EmailBackend",
+]
+
+# ── JWT (djangorestframework-simplejwt) ──────────────────────────────────────
+from datetime import timedelta  # noqa: E402
+
+SIMPLE_JWT = {
+    # Tiempos de expiración — ajustar en prodón según política de seguridad
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": False,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+}

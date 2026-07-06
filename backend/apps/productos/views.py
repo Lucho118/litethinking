@@ -4,8 +4,8 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.authentication.permissions import EsAdministradorOSoloLectura
 from apps.empresas.repositories import EmpresaRepository
-from apps.permissions import EsAdministrador
 
 from .repositories import ProductoRepository, TasaCambioRepository
 from .serializers import ProductoReadSerializer, ProductoWriteSerializer
@@ -31,10 +31,7 @@ class ProductoListCreateView(APIView):
     POST /api/productos/           → solo Administrador
     """
 
-    def get_permissions(self):
-        if self.request.method == "GET":
-            return [AllowAny()]
-        return [EsAdministrador()]
+    permission_classes = [EsAdministradorOSoloLectura]
 
     def get(self, request: Request) -> Response:
         empresa_nit = request.query_params.get("empresa_nit")
@@ -70,10 +67,7 @@ class ProductoDetailView(APIView):
     DELETE /api/productos/<codigo>/   → solo Administrador
     """
 
-    def get_permissions(self):
-        if self.request.method == "GET":
-            return [AllowAny()]
-        return [EsAdministrador()]
+    permission_classes = [EsAdministradorOSoloLectura]
 
     def get(self, request: Request, codigo: str) -> Response:
         # Opcional: ?moneda=USD o ?moneda=USD,EUR para limitar monedas devueltas

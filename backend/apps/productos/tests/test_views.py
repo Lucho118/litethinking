@@ -67,9 +67,13 @@ def test_listar_productos_es_publico(api_client):
 
 
 @pytest.mark.django_db
-def test_crear_producto_sin_autenticacion_retorna_403(api_client, empresa):
+def test_crear_producto_sin_autenticacion_retorna_401_o_403(api_client, empresa):
+    """Con JWT activo, unauthenticated = 401; authenticated sin permiso = 403."""
     response = api_client.post("/api/productos/", _payload(), format="json")
-    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.status_code in (
+        status.HTTP_401_UNAUTHORIZED,
+        status.HTTP_403_FORBIDDEN,
+    )
 
 
 # ── CRUD como Administrador ───────────────────────────────────────────────────
