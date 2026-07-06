@@ -1,9 +1,13 @@
 from rest_framework import status
+from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.authentication.permissions import EsAdministradorOSoloLectura
+from apps.productos.repositories import ProductoRepository, TasaCambioRepository
+from apps.productos.serializers import ProductoReadSerializer
+from apps.productos.use_cases import ListarProductosUseCase
 
 from .repositories import EmpresaRepository
 from .serializers import EmpresaSerializer
@@ -82,3 +86,41 @@ class EmpresaDetailView(APIView):
         except ValueError as exc:
             return Response({"error": str(exc)}, status=status.HTTP_404_NOT_FOUND)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class InventarioView(APIView):
+    """
+    GET /api/empresas/<nit>/inventario/
+
+    Devuelve los datos de la empresa más la lista completa de sus productos
+    con precios en todas las monedas soportadas (COP, USD, EUR).
+    Endpoint de solo lectura: accesible para cualquier usuario (incluso sin
+    autenticar), consistente con el resto de endpoints GET.
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request: Request, nit: str) -> Response:
+        empresa = ObtenerEmpresaUseCase(EmpresaRepository()).ejecutar(nit)
+        if empresa is None:
+            return Response(
+                {"error": f"No existe ninguna empresa con NIT '{nit}'."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        productos_con_precios = ListarProductosUseCase(
+            ProductoRepository(), TasaCambioRepository()
+        ).ejecutar(empresa_nit=nit)
+
+        return Response(
+            {
+                "empresa": {
+                    "nit": empresa.nit,
+                    "nombre": empresa.nombre,
+                    "direccion": empresa.direccion,
+                    "telefono": empresa.telefono,
+                },
+                "total_productos": len(productos_con_precios),
+                "productos": ProductoReadSerializer(productos_con_precios, many=True).data,
+            }
+        )
