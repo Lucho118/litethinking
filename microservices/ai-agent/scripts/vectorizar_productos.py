@@ -42,15 +42,18 @@ def main() -> None:
 
     try:
         productos = db.execute(
-            text("SELECT codigo, nombre, caracteristicas, empresa_id FROM productos")
+            text(
+                "SELECT codigo, nombre, caracteristicas, empresa_id FROM productos "
+                "WHERE embedding IS NULL"
+            )
         ).fetchall()
 
         total = len(productos)
         if total == 0:
-            print("No hay productos en la base de datos.")
+            print("Todos los productos ya están vectorizados. Nada que hacer.")
             return
 
-        print(f"Vectorizando {total} producto(s) con '{settings.OPENAI_EMBEDDING_MODEL}'...")
+        print(f"Vectorizando {total} producto(s) pendiente(s) con '{settings.OPENAI_EMBEDDING_MODEL}'...")
 
         ok = errores = 0
         for i, (codigo, nombre, caracteristicas, empresa_id) in enumerate(productos, 1):
