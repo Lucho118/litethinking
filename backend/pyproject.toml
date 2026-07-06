@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "backend"
+version = "0.1.0"
+description = "Application + infrastructure layer (Django + DRF)"
+authors = []
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.11"
+django = "^4.2"
+djangorestframework = "^3.14"
+psycopg2-binary = "^2.9"
+python-decouple = "^3.8"
+domain = {path = "../domain", develop = true}
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4"
+pytest-django = "^4.7"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "domain"
+version = "0.1.0"
+description = "Domain layer — pure business entities and rules. No framework dependencies."
+authors = []
+packages = [{include = "domain"}]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
