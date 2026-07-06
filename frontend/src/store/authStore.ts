@@ -19,7 +19,13 @@ interface AuthState {
   isLoading: boolean
 
   login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string) => Promise<void>
+  register: (
+    email: string,
+    password: string,
+    password_confirmar: string,
+    nombre?: string,
+    apellido?: string,
+  ) => Promise<void>
   logout: () => void
 
   // Hidrata el estado desde localStorage (llamado en main.tsx al arrancar)
@@ -41,8 +47,20 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user: data.user, isAuthenticated: true })
   },
 
-  register: async (email, password) => {
-    await api.post('/auth/register/', { email, password })
+  register: async (
+    email: string,
+    password: string,
+    password_confirmar: string,
+    nombre?: string,
+    apellido?: string,
+  ) => {
+    await api.post('/auth/register/', {
+      email,
+      password,
+      password_confirmar,
+      nombre: nombre ?? '',
+      apellido: apellido ?? '',
+    })
     // Tras registrar, hacemos login automático
     const { data } = await api.post<TokenResponse>('/auth/login/', {
       email,

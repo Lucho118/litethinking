@@ -32,6 +32,8 @@ class LoginSerializer(serializers.Serializer):
 
 class RegisterSerializer(serializers.Serializer):
     email = serializers.EmailField()
+    nombre = serializers.CharField(max_length=150, required=False, default="")
+    apellido = serializers.CharField(max_length=150, required=False, default="")
     password = serializers.CharField(write_only=True)
     password_confirmar = serializers.CharField(write_only=True)
 
@@ -54,9 +56,10 @@ class RegisterSerializer(serializers.Serializer):
 
     def save(self, **kwargs):
         email = self.validated_data["email"]
-        # username = email: evita crear un modelo de usuario custom
         return User.objects.create_user(
             username=email,
             email=email,
             password=self.validated_data["password"],
+            first_name=self.validated_data.get("nombre", ""),
+            last_name=self.validated_data.get("apellido", ""),
         )

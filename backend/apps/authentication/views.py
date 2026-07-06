@@ -74,6 +74,8 @@ class RegisterView(APIView):
                 "user": {
                     "id": user.id,
                     "email": user.email,
+                    "nombre": user.first_name,
+                    "apellido": user.last_name,
                     "grupos": ["Externo"],
                 },
             },
