@@ -1,1 +1,5 @@
-# Business entities will be defined here (Empresa, Producto, etc.)
+from .empresa import Empresa
+from .precio import Precio
+from .producto import Producto
+
+__all__ = ["Empresa", "Precio", "Producto"]
