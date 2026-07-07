@@ -240,3 +240,54 @@ def reindexar(
         "actualizados": actualizados,
         "errores": errores,
     }
+
+
+@router.post("/reindexar/{codigo}", summary="Vectoriza un producto específico e invalida el cache")
+def reindexar_uno(
+    codigo: str,
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+) -> dict:
+    """
+    Genera el embedding de un producto específico e invalida el cache del agente.
+    Llamado automáticamente desde el signal post_save de Django al crear/editar un producto.
+    """
+    if not settings.ia_habilitada:
+        raise _SIN_API_KEY
+
+    from services.embeddings import get_embeddings_client
+
+    client = get_embeddings_client()
+    if client is None:
+        raise _SIN_API_KEY
+
+    row = db.execute(
+        text("SELECT codigo, nombre, caracteristicas, empresa_id FROM productos WHERE codigo = :codigo"),
+        {"codigo": codigo},
+    ).fetchone()
+
+    if row is None:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail=f"Producto '{codigo}' no encontrado.")
+
+    _, nombre, caracteristicas, empresa_id = row
+    texto = f"{nombre}. {caracteristicas or ''}. Empresa NIT: {empresa_id}"
+
+    try:
+        emb = client.embed_query(texto)
+        db.execute(
+            text(
+                "UPDATE productos SET embedding = CAST(:emb AS vector) "
+                "WHERE codigo = :codigo"
+            ),
+            {"emb": formatear_embedding(emb), "codigo": codigo},
+        )
+        db.commit()
+    except Exception as exc:  # noqa: BLE001
+        db.rollback()
+        return {"mensaje": "Error al vectorizar", "codigo": codigo, "error": str(exc)}
+
+    # Invalidar cache: el catálogo cambió, las respuestas cacheadas son obsoletas
+    respuesta_cache.invalidad_todo()
+
+    return {"mensaje": "Producto vectorizado y cache invalidado", "codigo": codigo}

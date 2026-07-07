@@ -34,32 +34,28 @@ def _reset_embedding(codigo: str) -> None:
         logger.warning("No se pudo resetear embedding de %s: %s", codigo, exc)
 
 
-def _llamar_reindexar() -> None:
-    """Llama al endpoint POST /agente/reindexar del microservicio (fire-and-forget)."""
+def _llamar_reindexar(codigo: str) -> None:
+    """Vectoriza un producto específico e invalida el cache del agente."""
     try:
         import urllib.request
-        import urllib.error
         from django.conf import settings
 
-        url = f"{getattr(settings, 'AI_AGENT_URL', 'http://localhost:8001')}/agente/reindexar"
-        logger.info("Vectorizando productos → %s", url)
+        base_url = getattr(settings, 'AI_AGENT_URL', 'http://localhost:8001')
+        url = f"{base_url}/agente/reindexar/{codigo}"
+        logger.info("Vectorizando producto %s → %s", codigo, url)
         req = urllib.request.Request(url, data=b"", method="POST")
         req.add_header("Content-Type", "application/json")
         with urllib.request.urlopen(req, timeout=90) as resp:
             logger.info("Vectorización completada: %s", resp.read().decode())
     except Exception as exc:
-        logger.error(
-            "Error en vectorización automática (URL=%s): %s",
-            getattr(__import__('django.conf', fromlist=['settings']).settings, 'AI_AGENT_URL', 'http://localhost:8001'),
-            exc,
-        )
+        logger.error("Error en vectorización automática de %s: %s", codigo, exc)
 
 
 def _vectorizar_en_hilo(codigo: str, created: bool) -> None:
-    """Resetea embedding si es edición, luego llama al reindexador."""
+    """Resetea embedding si es edición, luego vectoriza solo ese producto."""
     if not created:
         _reset_embedding(codigo)
-    _llamar_reindexar()
+    _llamar_reindexar(codigo)
 
 
 def conectar_signal_vectorizacion():
