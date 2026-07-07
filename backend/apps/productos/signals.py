@@ -42,13 +42,16 @@ def _llamar_reindexar() -> None:
         from django.conf import settings
 
         url = f"{getattr(settings, 'AI_AGENT_URL', 'http://localhost:8001')}/agente/reindexar"
+        logger.info("Vectorizando productos → %s", url)
         req = urllib.request.Request(url, data=b"", method="POST")
         req.add_header("Content-Type", "application/json")
         with urllib.request.urlopen(req, timeout=90) as resp:
             logger.info("Vectorización completada: %s", resp.read().decode())
     except Exception as exc:
-        logger.warning(
-            "No se pudo vectorizar automáticamente (¿microservicio inactivo?): %s", exc
+        logger.error(
+            "Error en vectorización automática (URL=%s): %s",
+            getattr(__import__('django.conf', fromlist=['settings']).settings, 'AI_AGENT_URL', 'http://localhost:8001'),
+            exc,
         )
 
 
