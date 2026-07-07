@@ -44,7 +44,7 @@ def _llamar_reindexar() -> None:
         url = f"{getattr(settings, 'AI_AGENT_URL', 'http://localhost:8001')}/agente/reindexar"
         req = urllib.request.Request(url, data=b"", method="POST")
         req.add_header("Content-Type", "application/json")
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with urllib.request.urlopen(req, timeout=90) as resp:
             logger.info("Vectorización completada: %s", resp.read().decode())
     except Exception as exc:
         logger.warning(
