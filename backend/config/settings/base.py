@@ -122,9 +122,11 @@ AI_AGENT_URL = env.str("AI_AGENT_URL", default="http://localhost:8001")
 
 # ── Email (Gmail SMTP) ────────────────────────────────────────────────────────
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST     = env.str("EMAIL_HOST",     default="smtp.gmail.com")
-EMAIL_PORT     = env.int("EMAIL_PORT",     default=587)
-EMAIL_USE_TLS  = env.bool("EMAIL_USE_TLS", default=True)
+EMAIL_HOST     = env.str("EMAIL_HOST",      default="smtp.gmail.com")
+EMAIL_PORT     = env.int("EMAIL_PORT",      default=465)
+EMAIL_USE_TLS  = env.bool("EMAIL_USE_TLS",  default=False)
+EMAIL_USE_SSL  = env.bool("EMAIL_USE_SSL",  default=True)
+EMAIL_TIMEOUT  = 10  # segundos — evita que la conexión SMTP bloquee el worker
 EMAIL_HOST_USER     = env.str("EMAIL_HOST_USER",     default="")
 EMAIL_HOST_PASSWORD = env.str("EMAIL_HOST_PASSWORD", default="")
 DEFAULT_FROM_EMAIL  = env.str("DEFAULT_FROM_EMAIL",  default="noreply@litethinking.com")
