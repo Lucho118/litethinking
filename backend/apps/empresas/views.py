@@ -81,11 +81,17 @@ class EmpresaDetailView(APIView):
         return Response(EmpresaSerializer(empresa).data)
 
     def delete(self, request: Request, nit: str) -> Response:
+        from django.db.models import ProtectedError
         use_case = EliminarEmpresaUseCase(EmpresaRepository())
         try:
             use_case.ejecutar(nit)
         except ValueError as exc:
             return Response({"error": str(exc)}, status=status.HTTP_404_NOT_FOUND)
+        except ProtectedError:
+            return Response(
+                {"error": "No se puede eliminar la empresa porque tiene productos asociados. Elimina primero los productos."},
+                status=status.HTTP_409_CONFLICT,
+            )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

@@ -42,11 +42,10 @@ def _llamar_reindexar(codigo: str) -> None:
 
         base_url = getattr(settings, 'AI_AGENT_URL', 'http://localhost:8001')
         url = f"{base_url}/agente/reindexar/{codigo}"
-        logger.info("Vectorizando producto %s → %s", codigo, url)
         req = urllib.request.Request(url, data=b"", method="POST")
         req.add_header("Content-Type", "application/json")
         with urllib.request.urlopen(req, timeout=90) as resp:
-            logger.info("Vectorización completada: %s", resp.read().decode())
+            resp.read()
     except Exception as exc:
         logger.error("Error en vectorización automática de %s: %s", codigo, exc)
 

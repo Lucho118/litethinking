@@ -35,8 +35,9 @@ export function EmpresaDetailPage() {
     try {
       await api.delete(`/empresas/${nit}/`)
       navigate('/empresas')
-    } catch {
-      alert('No se pudo eliminar. Verifica que no tenga productos asociados.')
+    } catch (err: any) {
+      const msg = err?.response?.data?.error ?? 'No se pudo eliminar la empresa.'
+      alert(msg)
     }
   }
 
