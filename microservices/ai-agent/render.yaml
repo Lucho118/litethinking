@@ -1,0 +1,34 @@
+# render.yaml — Microservicio IA (litethinking-ai-agent)
+# Conectar este repositorio en Render apuntando a microservices/ai-agent/ como Root Directory.
+#
+# Variables marcadas con sync: false deben rellenarse manualmente en el dashboard de Render.
+#
+# IMPORTANTE: La base de datos PostgreSQL debe tener la extensión pgvector habilitada:
+#   CREATE EXTENSION IF NOT EXISTS vector;
+# Tras el primer deploy, vectorizar el catálogo:
+#   curl -X POST https://<tu-servicio>.onrender.com/agente/reindexar
+
+services:
+  - type: web
+    name: litethinking-ai-agent
+    runtime: python
+    buildCommand: pip install poetry && poetry config virtualenvs.create false && poetry install --no-dev
+    startCommand: >-
+      uvicorn main:app
+      --host 0.0.0.0
+      --port $PORT
+      --workers 2
+    healthCheckPath: /health
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false       # API key de OpenAI — platform.openai.com/api-keys
+      - key: DATABASE_URL
+        sync: false       # misma PostgreSQL que el backend
+      - key: OPENAI_EMBEDDING_MODEL
+        value: text-embedding-3-small
+      - key: OPENAI_CHAT_MODEL
+        value: gpt-4o-mini
+      - key: TOP_K_RESULTS
+        value: "5"
+      - key: EMBEDDING_DIMENSION
+        value: "1536"

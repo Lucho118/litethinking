@@ -1,8 +1,45 @@
 # Despliegue
 
-## Estado actual
+## Render (configuración actual)
 
-> El proyecto no está desplegado en producción. Esta sección documenta el checklist de pasos necesarios para hacerlo.
+El proyecto incluye `render.yaml` en la raíz — Render lo detecta automáticamente al conectar el repositorio y crea los dos servicios web de una vez (**Blueprint deploy**).
+
+### Pasos
+
+1. En [render.com](https://render.com), ir a **New → Blueprint** y conectar el repositorio.
+2. Render detecta `render.yaml` y propone crear los dos servicios.
+3. Antes de confirmar, rellenar las variables marcadas como `[REQUIRED]`:
+
+#### `litethinking-backend` (Django)
+
+| Variable | Cómo obtenerla |
+|---|---|
+| `SECRET_KEY` | `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"` |
+| `ALLOWED_HOSTS` | dominio asignado por Render, ej. `litethinking-backend.onrender.com` |
+| `DATABASE_URL` | URL de la PostgreSQL de Render / Supabase / Neon |
+| `CORS_ALLOWED_ORIGINS` | URL del frontend, ej. `https://litethinking.vercel.app` |
+| `AI_AGENT_URL` | URL del microservicio ai-agent en Render (disponible tras desplegarlo) |
+
+#### `litethinking-ai-agent` (FastAPI)
+
+| Variable | Cómo obtenerla |
+|---|---|
+| `OPENAI_API_KEY` | [platform.openai.com](https://platform.openai.com/api-keys) |
+| `DATABASE_URL` | misma que el backend |
+
+4. Después del primer deploy, ejecutar una vez desde el shell de Render:
+   ```bash
+   # En el shell del servicio backend:
+   python manage.py crear_admin --email admin@empresa.com --password "Admin123!"
+   
+   # En el shell del servicio ai-agent (tras crear productos desde el frontend):
+   curl -X POST https://litethinking-ai-agent.onrender.com/agente/reindexar
+   ```
+
+5. Habilitar `pgvector` en la BD (una sola vez):
+   ```sql
+   CREATE EXTENSION IF NOT EXISTS vector;
+   ```
 
 ---
 

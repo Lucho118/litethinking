@@ -1,0 +1,40 @@
+# render.yaml — Backend Django (litethinking-backend)
+# Conectar este repositorio en Render apuntando a la carpeta backend/ como Root Directory,
+# o usar este blueprint desde la raíz con rootDir configurado.
+#
+# Variables marcadas con sync: false deben rellenarse manualmente en el dashboard de Render.
+
+services:
+  - type: web
+    name: litethinking-backend
+    runtime: python
+    buildCommand: pip install poetry && poetry config virtualenvs.create false && poetry install --no-dev
+    startCommand: >-
+      python manage.py migrate --noinput &&
+      gunicorn config.wsgi:application
+      --bind 0.0.0.0:$PORT
+      --workers 2
+      --timeout 120
+      --log-level info
+    healthCheckPath: /api/auth/health/
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.prod
+      - key: SECRET_KEY
+        sync: false       # generar: python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        sync: false       # dominio de Render, ej: litethinking-backend.onrender.com
+      - key: DATABASE_URL
+        sync: false       # URL de PostgreSQL (Render DB / Supabase / Neon)
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false       # URL del frontend, ej: https://litethinking.vercel.app
+      - key: AI_AGENT_URL
+        sync: false       # URL del microservicio ai-agent, ej: https://litethinking-ai-agent.onrender.com
+      - key: EMAIL_HOST_USER
+        sync: false       # opcional — correo Gmail para envío de inventarios
+      - key: EMAIL_HOST_PASSWORD
+        sync: false       # opcional — App Password de Gmail
+      - key: DEFAULT_FROM_EMAIL
+        sync: false       # opcional — remitente visible en emails
