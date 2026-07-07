@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from routers.agente import router as agente_router
 
@@ -10,6 +11,18 @@ app = FastAPI(
         "LangChain + OpenAI GPT-4o-mini."
     ),
     version="0.1.0",
+)
+
+# CORS: permite peticiones desde el frontend React en desarrollo
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(agente_router)

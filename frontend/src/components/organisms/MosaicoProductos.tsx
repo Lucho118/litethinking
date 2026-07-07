@@ -20,7 +20,7 @@ export function MosaicoProductos({ empresaNit }: MosaicoProductosProps) {
 
   useEffect(() => {
     const url = empresaNit
-      ? `/productos/?empresa=${empresaNit}&moneda=COP,USD,EUR`
+      ? `/productos/?empresa_nit=${empresaNit}&moneda=COP,USD,EUR`
       : '/productos/?moneda=COP,USD,EUR'
 
     api

@@ -54,17 +54,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     nombre?: string,
     apellido?: string,
   ) => {
-    await api.post('/auth/register/', {
+    // El endpoint /auth/register/ ya devuelve tokens — los usamos directamente
+    const { data } = await api.post<TokenResponse>('/auth/register/', {
       email,
       password,
       password_confirmar,
       nombre: nombre ?? '',
       apellido: apellido ?? '',
-    })
-    // Tras registrar, hacemos login automático
-    const { data } = await api.post<TokenResponse>('/auth/login/', {
-      email,
-      password,
     })
     localStorage.setItem('access_token', data.access)
     localStorage.setItem('refresh_token', data.refresh)

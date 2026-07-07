@@ -8,6 +8,8 @@ import { EmpresasPage } from '@/pages/EmpresasPage'
 import { ProductosPage } from '@/pages/ProductosPage'
 import { EmpresaDetailPage } from '@/pages/EmpresaDetailPage'
 import { ProductoDetailPage } from '@/pages/ProductoDetailPage'
+import { EmpresaFormPage } from '@/pages/EmpresaFormPage'
+import { ProductoFormPage } from '@/pages/ProductoFormPage'
 
 /**
  * Organización de rutas:
@@ -46,8 +48,12 @@ export default function App() {
         <Route element={<PrivateRoute />}>
           <Route path="/" element={<Navigate to="/empresas" replace />} />
           <Route path="/empresas" element={<EmpresasPage />} />
+          <Route path="/empresas/nueva" element={<EmpresaFormPage />} />
+          <Route path="/empresas/:nit/editar" element={<EmpresaFormPage />} />
           <Route path="/empresas/:nit" element={<EmpresaDetailPage />} />
           <Route path="/productos" element={<ProductosPage />} />
+          <Route path="/productos/nuevo" element={<ProductoFormPage />} />
+          <Route path="/productos/:codigo/editar" element={<ProductoFormPage />} />
           <Route path="/productos/:codigo" element={<ProductoDetailPage />} />
         </Route>
 
