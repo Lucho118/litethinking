@@ -64,6 +64,9 @@ class AuditoriaRepository:
     def obtener_cadena_completa(self) -> list[BloqueAuditoria]:
         return [self._to_entity(m) for m in BloqueAuditoriaModel.objects.all()]
 
+    def contar_total(self) -> int:
+        return BloqueAuditoriaModel.objects.count()
+
     def obtener_por_entidad(self, entidad: str, entidad_id: str) -> list[BloqueAuditoria]:
         qs = BloqueAuditoriaModel.objects.filter(
             entidad=entidad, entidad_id=entidad_id

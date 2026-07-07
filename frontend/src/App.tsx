@@ -10,6 +10,7 @@ import { EmpresaDetailPage } from '@/pages/EmpresaDetailPage'
 import { ProductoDetailPage } from '@/pages/ProductoDetailPage'
 import { EmpresaFormPage } from '@/pages/EmpresaFormPage'
 import { ProductoFormPage } from '@/pages/ProductoFormPage'
+import { DashboardPage } from '@/pages/DashboardPage'
 
 /**
  * Organización de rutas:
@@ -55,6 +56,7 @@ export default function App() {
           <Route path="/productos/nuevo" element={<ProductoFormPage />} />
           <Route path="/productos/:codigo/editar" element={<ProductoFormPage />} />
           <Route path="/productos/:codigo" element={<ProductoDetailPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
         </Route>
 
         {/* Fallback */}

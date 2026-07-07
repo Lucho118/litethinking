@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+
+from django.db.models import Count
+
 from domain.entities.empresa import Empresa
 from .models import EmpresaModel
 
@@ -34,7 +38,25 @@ class EmpresaRepository:
     def eliminar(self, nit: str) -> bool:
         deleted, _ = EmpresaModel.objects.filter(nit=nit).delete()
         return deleted > 0
+    def contar(self) -> int:
+        return EmpresaModel.objects.count()
 
+    def top_5_con_mas_productos(self) -> list[dict]:
+        """Devuelve las 5 empresas con más productos registrados."""
+        rows = (
+            EmpresaModel.objects
+            .annotate(cantidad_productos=Count("productos"))
+            .order_by("-cantidad_productos")
+            [:5]
+        )
+        return [
+            {
+                "nombre": r.nombre,
+                "nit": r.nit,
+                "cantidad_productos": r.cantidad_productos,
+            }
+            for r in rows
+        ]
     # ── Private helpers ───────────────────────────────────────────────────────
 
     @staticmethod

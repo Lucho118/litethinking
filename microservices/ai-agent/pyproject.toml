@@ -18,6 +18,7 @@ psycopg2-binary = "^2.9"
 pgvector = "^0.3"
 pydantic-settings = "^2.0"
 python-dotenv = "^1.0"
+cachetools = "^5.3"
 domain = {path = "../../domain", develop = true}
 
 [tool.poetry.group.dev.dependencies]

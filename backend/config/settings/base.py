@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "apps.empresas",
     "apps.productos",
     "apps.auditoria",
+    "apps.dashboard",
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────

@@ -38,6 +38,34 @@ export interface UsuarioInfo {
   grupos: string[]
 }
 
+// ─── Dashboard ────────────────────────────────────────────────────────────────
+
+export interface TopEmpresa {
+  nombre: string
+  nit: string
+  cantidad_productos: number
+}
+
+export interface ProductoMasConsultado {
+  codigo: string
+  nombre: string
+  total_consultas: number
+}
+
+export interface RangoPrecio {
+  rango: string
+  cantidad: number
+}
+
+export interface DashboardResumen {
+  total_empresas: number
+  total_productos: number
+  top_5_empresas: TopEmpresa[]
+  producto_mas_consultado: ProductoMasConsultado | null
+  distribucion_precios: RangoPrecio[]
+  total_auditoria: number
+}
+
 export interface TokenResponse {
   access: string
   refresh: string

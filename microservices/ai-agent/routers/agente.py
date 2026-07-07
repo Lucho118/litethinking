@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from config import Settings, get_settings
 from database import get_db
+from services.cache import respuesta_cache
 from services.embeddings import embed_texto, formatear_embedding
 from services.rag import generar_respuesta
 
@@ -41,9 +42,33 @@ class ProductoContexto(BaseModel):
 class ConsultaResponse(BaseModel):
     respuesta: str
     productos_relacionados: list[ProductoContexto]
+    from_cache: bool = False
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
+_SQL_REGISTRAR_CONSULTA = text(
+    """
+    INSERT INTO consultas_productos (codigo, total_consultas)
+    VALUES (:codigo, 1)
+    ON CONFLICT (codigo)
+    DO UPDATE SET total_consultas = consultas_productos.total_consultas + 1
+    """
+)
+
+
+def _registrar_consultas(db: Session, productos: list[dict]) -> None:
+    """Incrementa el contador de consultas por cada producto aparecido en la respuesta."""
+    for p in productos:
+        try:
+            db.execute(_SQL_REGISTRAR_CONSULTA, {"codigo": p["codigo"]})
+        except Exception:  # noqa: BLE001 — no queremos que un fallo de estadísticas rompa el flujo
+            pass
+    try:
+        db.commit()
+    except Exception:  # noqa: BLE001
+        db.rollback()
+
 
 _SQL_SIMILARES = text(
     """
@@ -124,6 +149,19 @@ def consultar(
     if not settings.ia_habilitada:
         raise _SIN_API_KEY
 
+    # ── Cache hit ──────────────────────────────────────────────────────────
+    entrada_cache = respuesta_cache.obtener(body.pregunta)
+    if entrada_cache is not None:
+        # Registrar consultas aunque la respuesta venga de cache
+        _registrar_consultas(db, entrada_cache["productos"])
+        return ConsultaResponse(
+            respuesta=entrada_cache["respuesta"],
+            productos_relacionados=[
+                ProductoContexto(**p) for p in entrada_cache["productos"]
+            ],
+            from_cache=True,
+        )
+
     # 1. Embedding de la pregunta
     embedding = embed_texto(body.pregunta)
     if embedding is None:
@@ -144,9 +182,14 @@ def consultar(
     # 3 + 4. RAG: prompt + LLM
     respuesta = generar_respuesta(body.pregunta, productos)
 
+    # ── Guardar en cache y registrar consultas ─────────────────────────────
+    respuesta_cache.guardar(body.pregunta, {"respuesta": respuesta, "productos": productos})
+    _registrar_consultas(db, productos)
+
     return ConsultaResponse(
         respuesta=respuesta,
         productos_relacionados=[ProductoContexto(**p) for p in productos],
+        from_cache=False,
     )
 
 

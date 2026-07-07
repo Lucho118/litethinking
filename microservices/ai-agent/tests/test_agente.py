@@ -78,6 +78,86 @@ def test_consulta_sin_productos_vectorizados(client, mock_db):
     assert "reindexar" in data["respuesta"].lower()
 
 
+# ── Cache ─────────────────────────────────────────────────────────────────────
+
+def test_primera_consulta_no_viene_de_cache(client):
+    """La primera vez que se hace una pregunta, from_cache debe ser False."""
+    from services.cache import respuesta_cache
+    respuesta_cache.invalidad_todo()  # asegurar cache limpio
+
+    with (
+        patch("routers.agente.embed_texto", return_value=[0.1] * 1536),
+        patch("routers.agente.generar_respuesta", return_value="Respuesta fresca"),
+    ):
+        response = client.post("/agente/consulta", json={"pregunta": "pregunta única abc123"})
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["from_cache"] is False
+
+
+def test_segunda_consulta_igual_viene_de_cache(client):
+    """La segunda llamada con la misma pregunta devuelve from_cache=True
+    y no dispara una nueva llamada a OpenAI (el mock solo debe ejecutarse una vez)."""
+    from services.cache import respuesta_cache
+    respuesta_cache.invalidad_todo()
+
+    with (
+        patch("routers.agente.embed_texto", return_value=[0.1] * 1536) as mock_embed,
+        patch("routers.agente.generar_respuesta", return_value="Respuesta cacheada") as mock_llm,
+    ):
+        client.post("/agente/consulta", json={"pregunta": "laptop gaming"})
+        response2 = client.post("/agente/consulta", json={"pregunta": "laptop gaming"})
+
+    assert response2.status_code == status.HTTP_200_OK
+    assert response2.json()["from_cache"] is True
+
+    # LLM y embed solo deben haberse llamado una vez (en la primera petición)
+    mock_llm.assert_called_once()
+    mock_embed.assert_called_once()
+
+
+def test_normalizacion_pregunta_usa_mismo_cache(client):
+    """Preguntas con distinto formato (mayúsculas/espacios) comparten la misma entrada de cache."""
+    from services.cache import respuesta_cache
+    respuesta_cache.invalidad_todo()
+
+    with (
+        patch("routers.agente.embed_texto", return_value=[0.1] * 1536),
+        patch("routers.agente.generar_respuesta", return_value="Resultado") as mock_llm,
+    ):
+        client.post("/agente/consulta", json={"pregunta": "tablet barata"})
+        client.post("/agente/consulta", json={"pregunta": "  TABLET BARATA  "})
+
+    # El LLM solo se invocó una vez gracias a la normalización de la key
+    mock_llm.assert_called_once()
+
+
+def test_ttl_expirado_regenera_respuesta(client):
+    """Con TTL muy corto, el cache expira y el LLM se vuelve a llamar."""
+    import time
+    from services.cache import RespuestaCache
+
+    cache_corto = RespuestaCache(maxsize=10, ttl=1)  # TTL = 1 segundo
+
+    with patch("routers.agente.respuesta_cache", cache_corto):
+        with (
+            patch("routers.agente.embed_texto", return_value=[0.1] * 1536),
+            patch("routers.agente.generar_respuesta", return_value="Primera") as mock_llm,
+        ):
+            client.post("/agente/consulta", json={"pregunta": "pregunta ttl test"})
+
+        time.sleep(1.1)  # esperar a que expire el TTL
+
+        with (
+            patch("routers.agente.embed_texto", return_value=[0.1] * 1536),
+            patch("routers.agente.generar_respuesta", return_value="Segunda") as mock_llm2,
+        ):
+            response = client.post("/agente/consulta", json={"pregunta": "pregunta ttl test"})
+
+    assert response.json()["from_cache"] is False
+    mock_llm2.assert_called_once()
+
+
 def test_consulta_payload_invalido(client):
     """Falta el campo 'pregunta' — debe retornar 422."""
     response = client.post("/agente/consulta", json={})

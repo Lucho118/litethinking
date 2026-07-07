@@ -3,7 +3,7 @@ import { useAuthStore, isAdmin } from '@/store/authStore'
 import { Badge } from '@/components/atoms/Badge'
 import { Button } from '@/components/atoms/Button'
 
-type Tab = 'empresas' | 'productos'
+type Tab = 'empresas' | 'productos' | 'dashboard'
 
 interface NavbarTabsProps {
   activeTab: Tab
@@ -19,6 +19,12 @@ export function NavbarTabs({ activeTab }: NavbarTabsProps) {
     navigate('/login')
   }
 
+  const tabs: { key: Tab; label: string; adminOnly?: boolean }[] = [
+    { key: 'empresas', label: 'Empresas' },
+    { key: 'productos', label: 'Productos' },
+    { key: 'dashboard', label: 'Dashboard', adminOnly: true },
+  ]
+
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
@@ -32,19 +38,21 @@ export function NavbarTabs({ activeTab }: NavbarTabsProps) {
 
         {/* Tabs */}
         <nav className="flex gap-1">
-          {(['empresas', 'productos'] as Tab[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => navigate(`/${tab}`)}
-              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors capitalize
-                ${activeTab === tab
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
-                }`}
-            >
-              {tab}
-            </button>
-          ))}
+          {tabs
+            .filter((t) => !t.adminOnly || admin)
+            .map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => navigate(`/${tab.key}`)}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors
+                  ${activeTab === tab.key
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+              >
+                {tab.label}
+              </button>
+            ))}
         </nav>
 
         {/* User info + logout */}

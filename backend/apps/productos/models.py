@@ -32,6 +32,32 @@ class ProductoModel(models.Model):
         return f"{self.nombre} ({self.codigo})"
 
 
+class ConsultaProductoModel(models.Model):
+    """
+    Contador de consultas al agente IA por producto.
+    El microservicio ai-agent hace UPSERT directo via SQL sobre esta tabla.
+    El Dashboard Django la consulta via ORM para obtener el producto más consultado.
+    """
+
+    codigo = models.CharField(
+        max_length=50,
+        primary_key=True,
+        verbose_name="Código de producto",
+    )
+    total_consultas = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Total de consultas",
+    )
+
+    class Meta:
+        db_table = "consultas_productos"
+        verbose_name = "Consulta de producto"
+        verbose_name_plural = "Consultas de productos"
+
+    def __str__(self) -> str:
+        return f"{self.codigo}: {self.total_consultas} consultas"
+
+
 class TasaCambioModel(models.Model):
     """
     Tasas de cambio almacenadas manualmente en BD.
