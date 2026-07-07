@@ -12,12 +12,8 @@ services:
   - type: web
     name: litethinking-ai-agent
     runtime: python
-    buildCommand: pip install poetry && poetry config virtualenvs.create false && poetry install --no-dev
-    startCommand: >-
-      uvicorn main:app
-      --host 0.0.0.0
-      --port $PORT
-      --workers 2
+    buildCommand: "./build.sh"
+    startCommand: "./start.sh"
     healthCheckPath: /health
     envVars:
       - key: OPENAI_API_KEY
