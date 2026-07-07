@@ -1,14 +1,11 @@
 from .base import *  # noqa: F401, F403
-import os
 
 # En producción todos los valores deben venir de variables de entorno.
 # No se usa archivo .env en el servidor.
 DEBUG = False
 
-# ALLOWED_HOSTS acepta lista separada por comas en la variable de entorno:
-# ALLOWED_HOSTS=litethinking-backend.onrender.com,mi-dominio.com
-_hosts_env = os.environ.get("ALLOWED_HOSTS", "")
-ALLOWED_HOSTS = [h.strip() for h in _hosts_env.split(",") if h.strip()]
+# ALLOWED_HOSTS viene de la variable de entorno leída en base.py (django-environ).
+# No hace falta sobreescribir aquí — base.py ya la parsea como lista.
 
 # ── HTTPS / seguridad ────────────────────────────────────────────────────────
 # Render termina SSL en su proxy — confiar en el header X-Forwarded-Proto
