@@ -14,6 +14,7 @@ _PROMPT = ChatPromptTemplate.from_template(
     """Eres un asistente experto en el catálogo de productos de nuestras empresas.
 Responde la pregunta del usuario basándote ÚNICAMENTE en los productos listados abajo.
 Si la respuesta no está en los productos disponibles, dilo claramente en español.
+Cuando menciones un producto, SIEMPRE incluye su precio (en todas las monedas disponibles).
 Sé conciso y útil.
 
 Productos disponibles:
@@ -28,10 +29,19 @@ Respuesta en español:"""
 def _construir_contexto(productos: list[dict]) -> str:
     partes = []
     for p in productos:
+        # Precios: siempre incluir el precio base; convertidos si están disponibles
+        precios_str = f"{p['precio_base']} {p['moneda_base']}"
+        precios_extra = p.get("precios_convertidos") or {}
+        if precios_extra:
+            conversiones = ", ".join(
+                f"{v:.2f} {m}" for m, v in sorted(precios_extra.items())
+            )
+            precios_str += f" (equivale a: {conversiones})"
+
         partes.append(
             f"• [{p['codigo']}] {p['nombre']}\n"
             f"  Características: {p.get('caracteristicas') or 'N/A'}\n"
-            f"  Precio: {p['precio_base']} {p['moneda_base']}\n"
+            f"  Precio: {precios_str}\n"
             f"  Empresa (NIT): {p['empresa_id']}"
         )
     return "\n\n".join(partes)

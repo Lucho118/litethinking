@@ -35,6 +35,7 @@ class ProductoContexto(BaseModel):
     precio_base: str
     moneda_base: str
     empresa_id: str
+    precios_convertidos: dict[str, float] = {}
 
 
 class ConsultaResponse(BaseModel):
@@ -46,30 +47,63 @@ class ConsultaResponse(BaseModel):
 
 _SQL_SIMILARES = text(
     """
-    SELECT codigo, nombre, caracteristicas,
-           precio_base::text, moneda_base, empresa_id
-    FROM   productos
-    WHERE  embedding IS NOT NULL
-    ORDER  BY embedding <=> CAST(:emb AS vector)
+    SELECT p.codigo, p.nombre, p.caracteristicas,
+           p.precio_base::text, p.moneda_base, p.empresa_id
+    FROM   productos p
+    WHERE  p.embedding IS NOT NULL
+    ORDER  BY p.embedding <=> CAST(:emb AS vector)
     LIMIT  :top_k
     """
 )
+
+_SQL_TASAS = text(
+    """
+    SELECT moneda_origen, moneda_destino, tasa::float
+    FROM   tasas_cambio
+    """
+)
+
+
+def _cargar_tasas(db: Session) -> dict[tuple[str, str], float]:
+    """Carga todas las tasas de cambio en un dict para conversión rápida."""
+    rows = db.execute(_SQL_TASAS).fetchall()
+    return {(r[0], r[1]): r[2] for r in rows}
+
+
+def _convertir_precios(
+    precio_base: float,
+    moneda_base: str,
+    tasas: dict[tuple[str, str], float],
+    monedas_destino: list[str] = ["COP", "USD", "EUR"],
+) -> dict[str, float]:
+    resultado: dict[str, float] = {}
+    for destino in monedas_destino:
+        if destino == moneda_base:
+            resultado[destino] = round(precio_base, 2)
+        elif (moneda_base, destino) in tasas:
+            resultado[destino] = round(precio_base * tasas[(moneda_base, destino)], 2)
+    return resultado
 
 
 def _buscar_similares(db: Session, embedding: list[float], top_k: int) -> list[dict]:
     emb_str = formatear_embedding(embedding)
     rows = db.execute(_SQL_SIMILARES, {"emb": emb_str, "top_k": top_k}).fetchall()
-    return [
-        {
-            "codigo":          row[0],
-            "nombre":          row[1],
-            "caracteristicas": row[2] or "",
-            "precio_base":     row[3],
-            "moneda_base":     row[4],
-            "empresa_id":      row[5],
-        }
-        for row in rows
-    ]
+    tasas = _cargar_tasas(db)
+    productos = []
+    for row in rows:
+        precio_float = float(row[3])
+        moneda_base = row[4]
+        precios_convertidos = _convertir_precios(precio_float, moneda_base, tasas)
+        productos.append({
+            "codigo":              row[0],
+            "nombre":              row[1],
+            "caracteristicas":     row[2] or "",
+            "precio_base":         row[3],
+            "moneda_base":         moneda_base,
+            "empresa_id":          row[5],
+            "precios_convertidos": precios_convertidos,
+        })
+    return productos
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────

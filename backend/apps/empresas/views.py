@@ -1,8 +1,9 @@
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.http import HttpResponse
 
 from apps.authentication.permissions import EsAdministradorOSoloLectura
 from apps.productos.repositories import ProductoRepository, TasaCambioRepository
@@ -123,4 +124,102 @@ class InventarioView(APIView):
                 "total_productos": len(productos_con_precios),
                 "productos": ProductoReadSerializer(productos_con_precios, many=True).data,
             }
+        )
+
+
+def _obtener_empresa_y_productos(nit: str):
+    """Helper compartido por PDF y Email para evitar duplicar la lógica."""
+    empresa = ObtenerEmpresaUseCase(EmpresaRepository()).ejecutar(nit)
+    if empresa is None:
+        return None, None
+    productos = ListarProductosUseCase(
+        ProductoRepository(), TasaCambioRepository()
+    ).ejecutar(empresa_nit=nit)
+    return empresa, productos
+
+
+class InventarioPDFView(APIView):
+    """
+    GET /api/empresas/<nit>/inventario/pdf/
+    Descarga el inventario de la empresa como PDF.
+    Requiere autenticación (Bearer token).
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request, nit: str) -> HttpResponse:
+        from .pdf import generar_pdf_inventario
+
+        empresa, productos = _obtener_empresa_y_productos(nit)
+        if empresa is None:
+            return HttpResponse(
+                b'{"error": "Empresa no encontrada."}',
+                status=404,
+                content_type="application/json",
+            )
+
+        pdf_bytes = generar_pdf_inventario(empresa, productos)
+        nombre_archivo = f"inventario_{nit.replace('-', '_')}.pdf"
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="{nombre_archivo}"'
+        return response
+
+
+class InventarioEmailView(APIView):
+    """
+    POST /api/empresas/<nit>/inventario/email/
+    Body: { "email": "destinatario@ejemplo.com" }
+    Envía el inventario como PDF adjunto al correo indicado.
+    Requiere autenticación (Bearer token).
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request, nit: str) -> Response:
+        from django.core.mail import EmailMessage
+        from django.conf import settings as django_settings
+        from .pdf import generar_pdf_inventario
+
+        email_destino = (request.data or {}).get("email", "").strip()
+        if not email_destino:
+            return Response(
+                {"error": "Se requiere el campo 'email'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        empresa, productos = _obtener_empresa_y_productos(nit)
+        if empresa is None:
+            return Response(
+                {"error": "Empresa no encontrada."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        pdf_bytes = generar_pdf_inventario(empresa, productos)
+        nombre_archivo = f"inventario_{nit.replace('-', '_')}.pdf"
+
+        msg = EmailMessage(
+            subject=f"Inventario de productos — {empresa.nombre}",
+            body=(
+                f"Estimado/a,\n\n"
+                f"Adjunto encontrará el inventario actualizado de {empresa.nombre} "
+                f"(NIT: {empresa.nit}).\n\n"
+                f"Total de productos: {len(productos)}\n\n"
+                f"Saludos,\nLiteThinking"
+            ),
+            from_email=getattr(django_settings, "DEFAULT_FROM_EMAIL", "noreply@litethinking.com"),
+            to=[email_destino],
+        )
+        msg.attach(nombre_archivo, pdf_bytes, "application/pdf")
+
+        try:
+            msg.send()
+        except Exception as exc:
+            return Response(
+                {"error": f"No se pudo enviar el correo: {exc}"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        return Response(
+            {"mensaje": f"Inventario enviado a {email_destino}."},
+            status=status.HTTP_200_OK,
         )
