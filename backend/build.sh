@@ -3,4 +3,4 @@ set -e
 
 pip install poetry
 poetry config virtualenvs.create false
-poetry install --no-dev
+poetry install --only main
