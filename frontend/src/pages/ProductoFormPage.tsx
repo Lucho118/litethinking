@@ -13,6 +13,7 @@ interface ProductoForm {
   caracteristicas: string
   precio_monto: string
   precio_moneda: string
+  cantidad: string
   empresa_nit: string
 }
 
@@ -32,6 +33,7 @@ export function ProductoFormPage() {
     caracteristicas: '',
     precio_monto: '',
     precio_moneda: 'COP',
+    cantidad: '0',
     empresa_nit: searchParams.get('empresa') ?? '',
   })
   const [empresas, setEmpresas] = useState<Empresa[]>([])
@@ -53,9 +55,10 @@ export function ProductoFormPage() {
           codigo: r.data.codigo,
           nombre: r.data.nombre,
           caracteristicas: r.data.caracteristicas,
-          precio_monto: r.data.precio_base,
-          precio_moneda: r.data.moneda_base,
-          empresa_nit: r.data.empresa,
+          precio_monto: r.data.precio_base.monto,
+          precio_moneda: r.data.precio_base.moneda,
+          cantidad: String(r.data.cantidad ?? 0),
+          empresa_nit: r.data.empresa_nit,
         })
       })
       .catch(() => navigate('/productos'))
@@ -176,6 +179,18 @@ export function ProductoFormPage() {
                 </select>
               </FormField>
             </div>
+
+            <FormField label="Cantidad en inventario">
+              <Input
+                type="number"
+                min="0"
+                step="1"
+                placeholder="0"
+                value={form.cantidad}
+                onChange={(e) => set('cantidad', e.target.value)}
+                error={errors.cantidad}
+              />
+            </FormField>
 
             <FormField label="Empresa">
               <select

@@ -17,6 +17,7 @@ class ProductoWriteSerializer(serializers.Serializer):
     precio_moneda = serializers.ChoiceField(
         choices=sorted(MONEDAS_VALIDAS), default="COP"
     )
+    cantidad = serializers.IntegerField(min_value=0, default=0)
     empresa_nit = serializers.CharField(max_length=20)
 
     def validate_codigo(self, value: str) -> str:
@@ -42,6 +43,7 @@ class ProductoReadSerializer(serializers.Serializer):
             "codigo": p.codigo,
             "nombre": p.nombre,
             "caracteristicas": p.caracteristicas,
+            "cantidad": p.cantidad,
             "empresa_nit": p.empresa_nit,
             "empresa_nombre": instance.detalle.empresa_nombre,
             "precio_base": {

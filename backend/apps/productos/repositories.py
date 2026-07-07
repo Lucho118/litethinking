@@ -32,6 +32,7 @@ class ProductoRepository:
                 "precio_base": producto.precio_base.monto,
                 "moneda_base": producto.precio_base.moneda,
                 "empresa_id": producto.empresa_nit,
+                "cantidad": producto.cantidad,
             },
         )
         return self._to_entity(model)
@@ -73,6 +74,7 @@ class ProductoRepository:
             caracteristicas=model.caracteristicas,
             precio_base=Precio(monto=model.precio_base, moneda=model.moneda_base),
             empresa_nit=model.empresa_id,
+            cantidad=model.cantidad,
         )
 
 

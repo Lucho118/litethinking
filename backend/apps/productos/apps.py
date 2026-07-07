@@ -5,3 +5,7 @@ class ProductosConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "apps.productos"
     verbose_name = "Productos"
+
+    def ready(self):
+        from apps.productos.signals import conectar_signal_vectorizacion
+        conectar_signal_vectorizacion()

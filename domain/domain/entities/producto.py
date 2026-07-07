@@ -12,10 +12,12 @@ class Producto:
     caracteristicas: str
     precio_base: Precio
     empresa_nit: str  # solo el identificador — NO el objeto Empresa completo
+    cantidad: int = 0
 
     def __post_init__(self) -> None:
         self._validar_codigo()
         self._validar_nombre()
+        self._validar_cantidad()
 
     # ── Domain rules ──────────────────────────────────────────────────────────
 
@@ -26,3 +28,7 @@ class Producto:
     def _validar_nombre(self) -> None:
         if not self.nombre or not self.nombre.strip():
             raise ValueError("El nombre del producto no puede estar vacío.")
+
+    def _validar_cantidad(self) -> None:
+        if self.cantidad < 0:
+            raise ValueError("La cantidad no puede ser negativa.")

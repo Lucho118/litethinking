@@ -22,9 +22,11 @@ export interface Producto {
   codigo: string
   nombre: string
   caracteristicas: string
-  precio_base: string
+  cantidad: number
+  precio_base: { monto: string; moneda: string }
   moneda_base: string
-  empresa: string        // NIT de la empresa
+  empresa_nit: string
+  empresa_nombre: string
   precios?: Precios
 }
 

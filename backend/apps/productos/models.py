@@ -15,6 +15,7 @@ class ProductoModel(models.Model):
     caracteristicas = models.TextField(blank=True, verbose_name="Características")
     precio_base = models.DecimalField(max_digits=18, decimal_places=2, verbose_name="Precio base")
     moneda_base = models.CharField(max_length=3, default="COP", verbose_name="Moneda base")
+    cantidad = models.PositiveIntegerField(default=0, verbose_name="Cantidad en inventario")
     empresa = models.ForeignKey(
         EmpresaModel,
         on_delete=models.PROTECT,

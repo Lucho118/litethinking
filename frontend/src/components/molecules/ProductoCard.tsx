@@ -20,7 +20,7 @@ export function ProductoCard({ producto, compact = false }: ProductoCardProps) {
 
   const precioDisplay = producto.precios?.COP
     ? formatPrecio(producto.precios.COP.monto, 'COP')
-    : formatPrecio(producto.precio_base, producto.moneda_base)
+    : formatPrecio(producto.precio_base.monto, producto.precio_base.moneda)
 
   return (
     <article
@@ -45,7 +45,10 @@ export function ProductoCard({ producto, compact = false }: ProductoCardProps) {
 
       <div className="mt-3 flex items-center justify-between">
         <p className="text-lg font-bold text-blue-700">{precioDisplay}</p>
-        <p className="text-xs text-gray-400">NIT: {producto.empresa}</p>
+        <div className="text-right">
+          <p className="text-xs text-gray-500">{producto.empresa_nombre}</p>
+          <p className="text-xs text-gray-400 font-mono">{producto.empresa_nit}</p>
+        </div>
       </div>
     </article>
   )

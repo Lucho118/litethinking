@@ -44,7 +44,7 @@ export function ProductoDetailPage() {
     if (!codigo || !confirm('¿Eliminar este producto?')) return
     try {
       await api.delete(`/productos/${codigo}/`)
-      navigate(-1)
+      navigate(`/empresas/${producto?.empresa_nit ?? ''}`)
     } catch {
       alert('No se pudo eliminar el producto.')
     }
@@ -76,10 +76,10 @@ export function ProductoDetailPage() {
           </button>
           <span className="text-gray-400">/</span>
           <button
-            onClick={() => navigate(`/empresas/${producto.empresa}`)}
+            onClick={() => navigate(`/empresas/${producto.empresa_nit}`)}
             className="hover:underline"
           >
-            {producto.empresa}
+            {producto.empresa_nombre}
           </button>
           <span className="text-gray-400">/</span>
           <span className="text-gray-500">{producto.codigo}</span>
@@ -144,20 +144,31 @@ export function ProductoDetailPage() {
                   ))
                 : (
                   <p className="text-lg font-bold text-blue-700">
-                    {formatPrecio(producto.precio_base, producto.moneda_base)}
+                    {formatPrecio(producto.precio_base.monto, producto.precio_base.moneda)}
                   </p>
                 )}
             </div>
+          </div>
+
+          {/* Cantidad */}
+          <div className="mt-4 flex items-center gap-2">
+            <span className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Stock:</span>
+            <span className={`text-sm font-bold ${
+              producto.cantidad === 0 ? 'text-red-500' :
+              producto.cantidad < 5 ? 'text-yellow-600' : 'text-green-600'
+            }`}>
+              {producto.cantidad} unidades
+            </span>
           </div>
 
           {/* Empresa */}
           <div className="mt-6 pt-5 border-t border-gray-100">
             <span className="text-sm text-gray-500">Empresa: </span>
             <button
-              onClick={() => navigate(`/empresas/${producto.empresa}`)}
+              onClick={() => navigate(`/empresas/${producto.empresa_nit}`)}
               className="text-sm text-blue-600 hover:underline font-medium"
             >
-              {producto.empresa}
+              {producto.empresa_nombre} ({producto.empresa_nit})
             </button>
           </div>
         </div>

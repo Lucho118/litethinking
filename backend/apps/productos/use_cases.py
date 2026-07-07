@@ -62,6 +62,7 @@ class CrearProductoUseCase:
         precio_monto: Decimal,
         precio_moneda: str,
         empresa_nit: str,
+        cantidad: int = 0,
     ) -> Producto:
         if self.empresa_repo.obtener(empresa_nit) is None:
             raise ValueError(f"No existe ninguna empresa con NIT '{empresa_nit}'.")
@@ -75,6 +76,7 @@ class CrearProductoUseCase:
             caracteristicas=caracteristicas,
             precio_base=precio,
             empresa_nit=empresa_nit,
+            cantidad=cantidad,
         )
         return self.producto_repo.guardar(producto)
 
@@ -155,6 +157,7 @@ class ActualizarProductoUseCase:
         precio_monto: Decimal,
         precio_moneda: str,
         empresa_nit: str,
+        cantidad: int = 0,
     ) -> Producto:
         if self.producto_repo.obtener(codigo) is None:
             raise ValueError(f"No existe ningún producto con código '{codigo}'.")
@@ -168,6 +171,7 @@ class ActualizarProductoUseCase:
             caracteristicas=caracteristicas,
             precio_base=precio,
             empresa_nit=empresa_nit,
+            cantidad=cantidad,
         )
         return self.producto_repo.guardar(producto)
 

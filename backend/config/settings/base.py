@@ -113,6 +113,9 @@ CORS_ALLOWED_ORIGINS = env.list(
     "CORS_ALLOWED_ORIGINS",
     default=["http://localhost:3000"],
 )
+
+# URL del microservicio AI (FastAPI). Se usa en signals de vectorización.
+AI_AGENT_URL = env.str("AI_AGENT_URL", default="http://localhost:8001")
 # ── Authentication backend ────────────────────────────────────────────────────
 AUTHENTICATION_BACKENDS = [
     # Autentica con email en lugar de username (véase apps/authentication/backends.py)
