@@ -10,6 +10,19 @@ MONEDAS_VALIDAS: frozenset[str] = frozenset({"COP", "USD", "EUR"})
 
 @dataclass(frozen=True)  # immutable — Precio es un value object
 class Precio:
+    """
+    Value object que representa un monto de dinero en una moneda específica.
+
+    Es inmutable (frozen=True): una vez creado, no se puede cambiar.
+    Para "modificar" un precio se crea un nuevo objeto Precio.
+
+    Reglas de negocio:
+    - El monto no puede ser negativo.
+    - La moneda debe ser una de las monedas válidas (COP, USD, EUR).
+
+    El método convertir() aplica una tasa de cambio y devuelve un nuevo Precio
+    en la moneda destino, redondeado a 2 decimales (ROUND_HALF_UP).
+    """
     monto: Decimal
     moneda: str  # ISO 4217
 

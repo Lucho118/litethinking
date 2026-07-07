@@ -9,6 +9,16 @@ _NIT_PATTERN = re.compile(r"^\d{7,10}-\d$")
 
 @dataclass
 class Empresa:
+    """
+    Entidad de dominio que representa una empresa registrada en el sistema.
+
+    Reglas de negocio:
+    - El NIT debe seguir el formato colombiano: 7-10 dígitos, guión, 1 dígito verificador.
+    - El nombre no puede estar vacío.
+
+    Esta clase no tiene dependencias de framework — es Python puro.
+    Los modelos ORM y serializers viven en backend/, no aquí.
+    """
     nit: str
     nombre: str
     direccion: str

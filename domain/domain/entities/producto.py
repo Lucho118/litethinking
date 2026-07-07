@@ -7,6 +7,17 @@ from .precio import Precio
 
 @dataclass
 class Producto:
+    """
+    Entidad de dominio que representa un producto del catálogo de una empresa.
+
+    Reglas de negocio:
+    - El código y el nombre no pueden estar vacíos.
+    - La cantidad no puede ser negativa (representa stock en inventario).
+    - empresa_nit es una referencia débil al NIT — no el objeto Empresa completo
+      (evita dependencias circulares y acoplamientos entre agregados).
+
+    cantidad=0 es el valor por defecto al crear un producto nuevo.
+    """
     codigo: str
     nombre: str
     caracteristicas: str
