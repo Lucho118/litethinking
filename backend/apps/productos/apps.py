@@ -8,6 +8,5 @@ class ProductosConfig(AppConfig):
 
     def ready(self):
         import sys
-        print("[ProductosConfig] ready() ejecutado — conectando signal de vectorización", file=sys.stderr, flush=True)
-        from apps.productos.signals import conectar_signal_vectorizacion
-        conectar_signal_vectorizacion()
+        print("[ProductosConfig] ready() — importando signals", file=sys.stderr, flush=True)
+        import apps.productos.signals  # noqa: F401 — registra @receiver al importar

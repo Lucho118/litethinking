@@ -2,25 +2,20 @@
 Signal que vectoriza automáticamente un producto al crearlo o editarlo.
 
 Estrategia:
-- Al CREAR un producto (created=True), el embedding es NULL por defecto,
-  por lo que el endpoint /agente/reindexar lo procesará.
-- Al EDITAR un producto (created=False), reseteamos el embedding a NULL
-  para que el reindexador lo vuelva a procesar con el texto actualizado.
-- La llamada HTTP al microservicio corre en un hilo separado para no
-  bloquear la respuesta de la API de Django.
-- Si el microservicio no está disponible, se registra un warning y continúa.
-  La vectorización se puede recuperar corriendo manualmente el script.
+- Función definida a nivel de módulo (no closure) para que Python mantenga
+  una referencia fuerte y no haga garbage collect del handler con weak=True.
+- Se conecta mediante 'import apps.productos.signals' en ProductosConfig.ready().
+- transaction.on_commit garantiza que el hilo arranca DESPUÉS del commit
+  (update_or_create usa transaction.atomic() internamente).
+- Si el microservicio no está disponible, se registra el error y continúa.
 """
 
-import logging
 import sys
 import threading
 
 from django.db import connection, transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-
-logger = logging.getLogger(__name__)
 
 
 def _reset_embedding(codigo: str) -> None:
@@ -32,7 +27,7 @@ def _reset_embedding(codigo: str) -> None:
                 [codigo],
             )
     except Exception as exc:
-        logger.warning("No se pudo resetear embedding de %s: %s", codigo, exc)
+        print(f"[signal] WARNING: No se pudo resetear embedding de '{codigo}': {exc}", file=sys.stderr, flush=True)
 
 
 def _llamar_reindexar(codigo: str) -> None:
@@ -60,22 +55,25 @@ def _vectorizar_en_hilo(codigo: str, created: bool) -> None:
     _llamar_reindexar(codigo)
 
 
-def conectar_signal_vectorizacion():
-    """Conecta el signal. Llamado desde ProductosConfig.ready()."""
-    from apps.productos.models import ProductoModel
+# ── Signal handler a nivel de módulo ─────────────────────────────────────────
+# Definido aquí (NO dentro de una función) para que el módulo mantenga una
+# referencia fuerte. Con weak=True (default Django), los closures locales
+# pueden ser recolectados por el GC después de que conectar_signal_vectorizacion()
+# retorna, dejando el signal registrado pero con referencia muerta.
+# Se usa la cadena 'app_label.ModelName' como sender para evitar importar
+# ProductoModel aquí y causar circular imports al cargar el módulo.
+@receiver(post_save, sender="productos.ProductoModel", dispatch_uid="vectorizar_producto")
+def vectorizar_producto(sender, instance, created, **kwargs):
+    codigo = instance.codigo
+    print(f"[signal] post_save recibido para '{codigo}' (created={created})", file=sys.stderr, flush=True)
 
-    @receiver(post_save, sender=ProductoModel, dispatch_uid="vectorizar_producto")
-    def vectorizar_producto(sender, instance, created, **kwargs):
-        codigo = instance.codigo
-        print(f"[signal] post_save recibido para '{codigo}' (created={created})", file=sys.stderr, flush=True)
+    def iniciar_hilo():
+        print(f"[signal] on_commit ejecutado para '{codigo}' — arrancando hilo", file=sys.stderr, flush=True)
+        hilo = threading.Thread(
+            target=_vectorizar_en_hilo,
+            args=(codigo, created),
+            daemon=False,
+        )
+        hilo.start()
 
-        def iniciar_hilo():
-            print(f"[signal] on_commit ejecutado para '{codigo}' — arrancando hilo", file=sys.stderr, flush=True)
-            hilo = threading.Thread(
-                target=_vectorizar_en_hilo,
-                args=(codigo, created),
-                daemon=False,
-            )
-            hilo.start()
-
-        transaction.on_commit(iniciar_hilo)
+    transaction.on_commit(iniciar_hilo)
