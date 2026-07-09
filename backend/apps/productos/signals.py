@@ -73,7 +73,7 @@ def conectar_signal_vectorizacion():
             hilo = threading.Thread(
                 target=_vectorizar_en_hilo,
                 args=(codigo, created),
-                daemon=True,
+                daemon=False,
             )
             hilo.start()
 

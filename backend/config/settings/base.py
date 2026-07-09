@@ -120,6 +120,22 @@ CORS_ALLOWED_ORIGINS = env.list(
 # URL del microservicio AI (FastAPI). Se usa en signals de vectorización.
 AI_AGENT_URL = env.str("AI_AGENT_URL", default="http://localhost:8001")
 
+# ── Logging ───────────────────────────────────────────────────────────────────
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+    },
+    "loggers": {
+        "apps.productos.signals": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}
+
 # ── Email ─────────────────────────────────────────────────────────────────────
 # En producción se usa Resend via HTTPS (Render bloquea SMTP).
 # En desarrollo local, si no hay RESEND_API_KEY, usa la consola (no envía nada).
