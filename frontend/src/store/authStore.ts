@@ -44,6 +44,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     })
     localStorage.setItem('access_token', data.access)
     localStorage.setItem('refresh_token', data.refresh)
+    localStorage.setItem('user', JSON.stringify(data.user))
     set({ user: data.user, isAuthenticated: true })
   },
 
@@ -64,33 +65,27 @@ export const useAuthStore = create<AuthState>((set) => ({
     })
     localStorage.setItem('access_token', data.access)
     localStorage.setItem('refresh_token', data.refresh)
+    localStorage.setItem('user', JSON.stringify(data.user))
     set({ user: data.user, isAuthenticated: true })
   },
 
   logout: () => {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
+    localStorage.removeItem('user')
     set({ user: null, isAuthenticated: false })
   },
 
   hydrate: async () => {
     const accessToken = localStorage.getItem('access_token')
-    if (!accessToken) {
+    const storedUser = localStorage.getItem('user')
+
+    if (!accessToken || !storedUser) {
       set({ isLoading: false })
       return
     }
 
-    // Helper: decodifica payload del JWT y construye UsuarioInfo
-    const decodeUser = (token: string): UsuarioInfo | null => {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]))
-        return { id: payload.user_id, email: payload.email ?? '', grupos: payload.grupos ?? [] }
-      } catch {
-        return null
-      }
-    }
-
-    // Helper: comprueba si el token JWT ha expirado (con 30s de margen)
+    // Verificar si el access token ha expirado (con 30s de margen)
     const isExpired = (token: string): boolean => {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]))
@@ -100,17 +95,19 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
     }
 
-    // Si el access token sigue vigente, úsalo directamente — sin llamada al servidor
+    const user: UsuarioInfo = JSON.parse(storedUser)
+
+    // Token vigente → restaurar sesión directamente sin llamada al servidor
     if (!isExpired(accessToken)) {
-      const user = decodeUser(accessToken)
-      set({ user, isAuthenticated: Boolean(user), isLoading: false })
+      set({ user, isAuthenticated: true, isLoading: false })
       return
     }
 
-    // Token expirado: intentar refrescar
+    // Token expirado → intentar refrescar
     const refreshToken = localStorage.getItem('refresh_token')
     if (!refreshToken) {
       localStorage.removeItem('access_token')
+      localStorage.removeItem('user')
       set({ user: null, isAuthenticated: false, isLoading: false })
       return
     }
@@ -118,19 +115,18 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const { data } = await api.post<{ access: string }>('/auth/refresh/', { refresh: refreshToken })
       localStorage.setItem('access_token', data.access)
-      const user = decodeUser(data.access)
-      set({ user, isAuthenticated: Boolean(user), isLoading: false })
+      set({ user, isAuthenticated: true, isLoading: false })
     } catch (err: any) {
       const status = err?.response?.status
       if (status === 401 || status === 403) {
         // Refresh token inválido o expirado → cerrar sesión
         localStorage.removeItem('access_token')
         localStorage.removeItem('refresh_token')
+        localStorage.removeItem('user')
         set({ user: null, isAuthenticated: false, isLoading: false })
       } else {
-        // Error de red / servidor dormido → mantener sesión con datos del token actual
-        const user = decodeUser(accessToken)
-        set({ user, isAuthenticated: Boolean(user), isLoading: false })
+        // Error de red (servidor dormido, etc.) → mantener sesión
+        set({ user, isAuthenticated: true, isLoading: false })
       }
     }
   },
