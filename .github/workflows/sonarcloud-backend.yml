@@ -11,6 +11,7 @@ on:
     paths:
       - 'backend/**'
       - 'domain/**'
+  workflow_dispatch:
 
 jobs:
   sonarcloud:
