@@ -1,5 +1,7 @@
 # LiteThinking — Prueba Técnica 2026
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=litethinking-backend&metric=alert_status)](https://sonarcloud.io/dashboard?id=litethinking-backend)
+
 Aplicación full-stack que gestiona el catálogo de **empresas** y sus **productos**, con autenticación JWT, auditoría hash-chain, exportación PDF/email, y un agente IA conversacional basado en RAG.
 
 Construida sobre Arquitectura Limpia: el paquete `domain/` concentra toda la lógica de negocio sin depender de ningún framework; `backend/` orquesta la aplicación con Django; `microservices/ai-agent/` es un servicio FastAPI independiente; y `frontend/` presenta la interfaz React.

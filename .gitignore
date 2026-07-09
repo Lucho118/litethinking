@@ -42,7 +42,9 @@ __pycache__/
 .mypy_cache/
 .coverage
 coverage/
+coverage.xml
 htmlcov/
+test-results.xml
 
 # Build and distribution output
 dist/
