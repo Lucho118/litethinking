@@ -31,12 +31,6 @@ app.include_router(agente_router)
 
 
 @app.get("/health")
+@app.head("/health")
 async def health() -> dict:
-    from config import get_settings
-    settings = get_settings()
-    return {
-        "status": "ok",
-        "ia_habilitada": settings.ia_habilitada,
-        "embedding_model": settings.OPENAI_EMBEDDING_MODEL,
-        "chat_model": settings.OPENAI_CHAT_MODEL,
-    }
+    return {"status": "ok"}
