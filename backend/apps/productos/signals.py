@@ -66,10 +66,10 @@ def conectar_signal_vectorizacion():
     @receiver(post_save, sender=ProductoModel, dispatch_uid="vectorizar_producto")
     def vectorizar_producto(sender, instance, created, **kwargs):
         codigo = instance.codigo
-        logger.info("[signal] post_save recibido para '%s' (created=%s)", codigo, created)
+        print(f"[signal] post_save recibido para '{codigo}' (created={created})", flush=True)
 
         def iniciar_hilo():
-            logger.info("[signal] on_commit ejecutado para '%s' — arrancando hilo", codigo)
+            print(f"[signal] on_commit ejecutado para '{codigo}' — arrancando hilo", flush=True)
             hilo = threading.Thread(
                 target=_vectorizar_en_hilo,
                 args=(codigo, created),
