@@ -27,7 +27,7 @@ def _reset_embedding(codigo: str) -> None:
                 [codigo],
             )
     except Exception as exc:
-        print(f"[signal] WARNING: No se pudo resetear embedding de '{codigo}': {exc}", file=sys.stderr, flush=True)
+        pass
 
 
 def _llamar_reindexar(codigo: str) -> None:
@@ -38,14 +38,12 @@ def _llamar_reindexar(codigo: str) -> None:
 
         base_url = getattr(settings, 'AI_AGENT_URL', 'http://localhost:8001')
         url = f"{base_url}/agente/reindexar/{codigo}"
-        print(f"[signal] Llamando microservicio: POST {url}", file=sys.stderr, flush=True)
         req = urllib.request.Request(url, data=b"", method="POST")
         req.add_header("Content-Type", "application/json")
         with urllib.request.urlopen(req, timeout=90) as resp:
-            body = resp.read()
-            print(f"[signal] Vectorización exitosa para '{codigo}': {body.decode()}", file=sys.stderr, flush=True)
+            resp.read()
     except Exception as exc:
-        print(f"[signal] ERROR al vectorizar '{codigo}': {exc}", file=sys.stderr, flush=True)
+        pass
 
 
 def _vectorizar_en_hilo(codigo: str, created: bool) -> None:
@@ -65,10 +63,8 @@ def _vectorizar_en_hilo(codigo: str, created: bool) -> None:
 @receiver(post_save, sender="productos.ProductoModel", dispatch_uid="vectorizar_producto")
 def vectorizar_producto(sender, instance, created, **kwargs):
     codigo = instance.codigo
-    print(f"[signal] post_save recibido para '{codigo}' (created={created})", file=sys.stderr, flush=True)
 
     def iniciar_hilo():
-        print(f"[signal] on_commit ejecutado para '{codigo}' — arrancando hilo", file=sys.stderr, flush=True)
         hilo = threading.Thread(
             target=_vectorizar_en_hilo,
             args=(codigo, created),

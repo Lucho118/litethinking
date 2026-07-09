@@ -34,7 +34,6 @@ def main() -> None:
     settings = get_settings()
 
     if not settings.ia_habilitada:
-        print("ERROR: OPENAI_API_KEY no configurada en .env")
         sys.exit(1)
 
     client = get_embeddings_client()
@@ -50,10 +49,7 @@ def main() -> None:
 
         total = len(productos)
         if total == 0:
-            print("Todos los productos ya están vectorizados. Nada que hacer.")
             return
-
-        print(f"Vectorizando {total} producto(s) pendiente(s) con '{settings.OPENAI_EMBEDDING_MODEL}'...")
 
         ok = errores = 0
         for i, (codigo, nombre, caracteristicas, empresa_id) in enumerate(productos, 1):
@@ -67,18 +63,14 @@ def main() -> None:
                     ),
                     {"emb": formatear_embedding(emb), "codigo": codigo},
                 )
-                print(f"  [{i}/{total}] {codigo}: {nombre} ✓")
                 ok += 1
             except Exception as exc:
-                print(f"  [{i}/{total}] {codigo}: ERROR — {exc}")
                 errores += 1
 
         db.commit()
-        print(f"\n✓ Completado: {ok} actualizados, {errores} errores.")
 
     except Exception as exc:
         db.rollback()
-        print(f"ERROR fatal: {exc}")
         sys.exit(1)
     finally:
         db.close()

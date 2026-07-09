@@ -56,10 +56,9 @@ jobs:
           bash -c '
             export SECRET_KEY="ci-dummy-secret-key-only-for-testing-do-not-use-in-production"
             export DEBUG="False"
-            export DATABASE_URL="postgres://postgres:postgres@localhost:5432/test_db"
+            export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/litethinking"
             export ALLOWED_HOSTS="localhost,127.0.0.1"
             export CORS_ALLOWED_ORIGINS="http://localhost:3000"
-            export AI_AGENT_URL="http://localhost:8001"
             poetry run pytest --cov=apps --cov=config --cov-report=xml:coverage.xml --cov-report=html -v
           '
       

@@ -8,5 +8,4 @@ class ProductosConfig(AppConfig):
 
     def ready(self):
         import sys
-        print("[ProductosConfig] ready() — importando signals", file=sys.stderr, flush=True)
         import apps.productos.signals  # noqa: F401 — registra @receiver al importar
