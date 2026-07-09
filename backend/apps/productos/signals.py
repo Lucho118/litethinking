@@ -15,7 +15,7 @@ Estrategia:
 import logging
 import threading
 
-from django.db import connection
+from django.db import connection, transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -63,9 +63,14 @@ def conectar_signal_vectorizacion():
 
     @receiver(post_save, sender=ProductoModel, dispatch_uid="vectorizar_producto")
     def vectorizar_producto(sender, instance, created, **kwargs):
-        hilo = threading.Thread(
-            target=_vectorizar_en_hilo,
-            args=(instance.codigo, created),
-            daemon=True,
-        )
-        hilo.start()
+        codigo = instance.codigo
+
+        def iniciar_hilo():
+            hilo = threading.Thread(
+                target=_vectorizar_en_hilo,
+                args=(codigo, created),
+                daemon=True,
+            )
+            hilo.start()
+
+        transaction.on_commit(iniciar_hilo)
