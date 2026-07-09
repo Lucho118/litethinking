@@ -42,12 +42,14 @@ def _llamar_reindexar(codigo: str) -> None:
 
         base_url = getattr(settings, 'AI_AGENT_URL', 'http://localhost:8001')
         url = f"{base_url}/agente/reindexar/{codigo}"
+        logger.info("[signal] Llamando microservicio: POST %s", url)
         req = urllib.request.Request(url, data=b"", method="POST")
         req.add_header("Content-Type", "application/json")
         with urllib.request.urlopen(req, timeout=90) as resp:
-            resp.read()
+            body = resp.read()
+            logger.info("[signal] Vectorización exitosa para '%s': %s", codigo, body.decode())
     except Exception as exc:
-        logger.error("Error en vectorización automática de %s: %s", codigo, exc)
+        logger.error("[signal] Error al vectorizar '%s': %s", codigo, exc)
 
 
 def _vectorizar_en_hilo(codigo: str, created: bool) -> None:
@@ -64,8 +66,10 @@ def conectar_signal_vectorizacion():
     @receiver(post_save, sender=ProductoModel, dispatch_uid="vectorizar_producto")
     def vectorizar_producto(sender, instance, created, **kwargs):
         codigo = instance.codigo
+        logger.info("[signal] post_save recibido para '%s' (created=%s)", codigo, created)
 
         def iniciar_hilo():
+            logger.info("[signal] on_commit ejecutado para '%s' — arrancando hilo", codigo)
             hilo = threading.Thread(
                 target=_vectorizar_en_hilo,
                 args=(codigo, created),
