@@ -17,6 +17,12 @@ export const api = axios.create({
 
 // ─── Request interceptor: adjunta access token ────────────────────────────────
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  const url = config.url ?? ''
+  // No adjuntar token en endpoints públicos de autenticación
+  if (url.includes('/auth/login') || url.includes('/auth/register')) {
+    return config
+  }
+
   const token = localStorage.getItem('access_token')
   if (token && config.headers) {
     config.headers['Authorization'] = `Bearer ${token}`
