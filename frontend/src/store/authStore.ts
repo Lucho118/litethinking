@@ -74,33 +74,64 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   hydrate: async () => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
+    const accessToken = localStorage.getItem('access_token')
+    if (!accessToken) {
       set({ isLoading: false })
       return
     }
-    try {
-      // Usamos el endpoint de refresh para verificar la sesión y obtener info del usuario
-      const refresh = localStorage.getItem('refresh_token')
-      if (!refresh) throw new Error('no refresh')
-      const { data } = await api.post<{ access: string }>('/auth/refresh/', {
-        refresh,
-      })
-      localStorage.setItem('access_token', data.access)
 
-      // Decodifica el payload del JWT para obtener info básica del usuario
-      // (sin llamada extra al backend)
-      const payload = JSON.parse(atob(data.access.split('.')[1]))
-      const user: UsuarioInfo = {
-        id: payload.user_id,
-        email: payload.email ?? '',
-        grupos: payload.grupos ?? [],
+    // Helper: decodifica payload del JWT y construye UsuarioInfo
+    const decodeUser = (token: string): UsuarioInfo | null => {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        return { id: payload.user_id, email: payload.email ?? '', grupos: payload.grupos ?? [] }
+      } catch {
+        return null
       }
-      set({ user, isAuthenticated: true, isLoading: false })
-    } catch {
+    }
+
+    // Helper: comprueba si el token JWT ha expirado (con 30s de margen)
+    const isExpired = (token: string): boolean => {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        return Date.now() >= payload.exp * 1000 - 30_000
+      } catch {
+        return true
+      }
+    }
+
+    // Si el access token sigue vigente, úsalo directamente — sin llamada al servidor
+    if (!isExpired(accessToken)) {
+      const user = decodeUser(accessToken)
+      set({ user, isAuthenticated: Boolean(user), isLoading: false })
+      return
+    }
+
+    // Token expirado: intentar refrescar
+    const refreshToken = localStorage.getItem('refresh_token')
+    if (!refreshToken) {
       localStorage.removeItem('access_token')
-      localStorage.removeItem('refresh_token')
       set({ user: null, isAuthenticated: false, isLoading: false })
+      return
+    }
+
+    try {
+      const { data } = await api.post<{ access: string }>('/auth/refresh/', { refresh: refreshToken })
+      localStorage.setItem('access_token', data.access)
+      const user = decodeUser(data.access)
+      set({ user, isAuthenticated: Boolean(user), isLoading: false })
+    } catch (err: any) {
+      const status = err?.response?.status
+      if (status === 401 || status === 403) {
+        // Refresh token inválido o expirado → cerrar sesión
+        localStorage.removeItem('access_token')
+        localStorage.removeItem('refresh_token')
+        set({ user: null, isAuthenticated: false, isLoading: false })
+      } else {
+        // Error de red / servidor dormido → mantener sesión con datos del token actual
+        const user = decodeUser(accessToken)
+        set({ user, isAuthenticated: Boolean(user), isLoading: false })
+      }
     }
   },
 }))
