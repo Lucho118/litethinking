@@ -1,7 +1,12 @@
 from django.contrib import admin
 from django.urls import path, include
+from django.http import JsonResponse
+
+def health(request):
+    return JsonResponse({"status": "ok"}, status=200)
 
 urlpatterns = [
+    path("health/", health, name="health"),
     path("admin/", admin.site.urls),
     path("api/auth/", include("apps.authentication.urls")),
     path("api/auditoria/", include("apps.auditoria.urls")),
