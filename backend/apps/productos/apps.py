@@ -7,6 +7,7 @@ class ProductosConfig(AppConfig):
     verbose_name = "Productos"
 
     def ready(self):
-        print("[ProductosConfig] ready() ejecutado — conectando signal de vectorización", flush=True)
+        import sys
+        print("[ProductosConfig] ready() ejecutado — conectando signal de vectorización", file=sys.stderr, flush=True)
         from apps.productos.signals import conectar_signal_vectorizacion
         conectar_signal_vectorizacion()

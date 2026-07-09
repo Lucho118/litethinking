@@ -13,6 +13,7 @@ Estrategia:
 """
 
 import logging
+import sys
 import threading
 
 from django.db import connection, transaction
@@ -42,14 +43,14 @@ def _llamar_reindexar(codigo: str) -> None:
 
         base_url = getattr(settings, 'AI_AGENT_URL', 'http://localhost:8001')
         url = f"{base_url}/agente/reindexar/{codigo}"
-        logger.info("[signal] Llamando microservicio: POST %s", url)
+        print(f"[signal] Llamando microservicio: POST {url}", file=sys.stderr, flush=True)
         req = urllib.request.Request(url, data=b"", method="POST")
         req.add_header("Content-Type", "application/json")
         with urllib.request.urlopen(req, timeout=90) as resp:
             body = resp.read()
-            logger.info("[signal] Vectorización exitosa para '%s': %s", codigo, body.decode())
+            print(f"[signal] Vectorización exitosa para '{codigo}': {body.decode()}", file=sys.stderr, flush=True)
     except Exception as exc:
-        logger.error("[signal] Error al vectorizar '%s': %s", codigo, exc)
+        print(f"[signal] ERROR al vectorizar '{codigo}': {exc}", file=sys.stderr, flush=True)
 
 
 def _vectorizar_en_hilo(codigo: str, created: bool) -> None:
@@ -66,10 +67,10 @@ def conectar_signal_vectorizacion():
     @receiver(post_save, sender=ProductoModel, dispatch_uid="vectorizar_producto")
     def vectorizar_producto(sender, instance, created, **kwargs):
         codigo = instance.codigo
-        print(f"[signal] post_save recibido para '{codigo}' (created={created})", flush=True)
+        print(f"[signal] post_save recibido para '{codigo}' (created={created})", file=sys.stderr, flush=True)
 
         def iniciar_hilo():
-            print(f"[signal] on_commit ejecutado para '{codigo}' — arrancando hilo", flush=True)
+            print(f"[signal] on_commit ejecutado para '{codigo}' — arrancando hilo", file=sys.stderr, flush=True)
             hilo = threading.Thread(
                 target=_vectorizar_en_hilo,
                 args=(codigo, created),
